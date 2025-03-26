@@ -1,0 +1,493 @@
+---
+title: "SaudiOilStockAnalysis"
+author: "Creig"
+date: "2024-10-01"
+output: html_document
+---
+
+Importing the data file 'SaudiArabia.xlsx' that contains data related to Saudi Arabia stock market and oil market.
+
+```{r}
+library(readxl)
+library(tseries)
+library(ggplot2)
+library(zoo)
+
+
+stockdata<- read_excel("D:\\Master's Files\\Time Series\\SaudiArabia.xlsx", sheet = 'Tadawul Share')
+stockdata
+```
+
+```{r}
+summary(stockdata)
+
+```
+
+Getting the dates with the lowest and highest closing prices.
+```{r}
+
+paste(stockdata$Date[stockdata$Price==min(stockdata$Price)])
+
+paste(stockdata$Date[stockdata$Price==max(stockdata$Price)])
+```
+
+
+Getting the dates with the lowest and highest 'High' prices.
+```{r}
+
+paste(stockdata$Date[stockdata$High==min(stockdata$High)])
+
+paste(stockdata$Date[stockdata$High==max(stockdata$High)])
+```
+
+
+Getting the dates with the lowest and highest closing prices.
+```{r}
+
+paste(stockdata$Date[stockdata$`Change %`==min(stockdata$`Change %`)])
+
+paste(stockdata$Date[stockdata$`Change %`==max(stockdata$`Change %`)])
+```
+
+
+Converting the data frame to 'zoo' format.
+```{r}
+
+stockzoo<-read.zoo(data.frame(stockdata),FUN=as.Date, format="%d%m%y")
+
+print("Beginning Observations:")
+head(stockzoo)
+print("End Observations:")
+tail(stockzoo)
+
+```
+
+Plotting the closing price for Saudi Arabia's stock market as time series.
+
+```{r}
+library(ggplot2)
+library(plotly)
+
+attach(stockdata)
+ggplot(data=stockdata, aes(x=Date, y=Price))+geom_line()
+```
+
+Plotting the lowest price of the day.
+
+```{r}
+
+attach(stockdata)
+ggplot(data=stockdata, aes(x=Date,y=Low))+geom_area()
+
+```
+
+Plotting all data points
+```{r}
+windows.options(width=200, height=600)
+#dev.new(width=10, height=5, unit="in")
+plot(stockzoo)
+
+```
+
+
+plotting the open price and the date
+```{r}
+
+ggplot(stockdata, aes(Date,Open))+geom_line()
+
+
+```
+
+Plotting the Highest price and the date
+```{r}
+
+ggplot(stockdata, aes(Date,High))+geom_line()
+
+
+```
+
+Plotting the change as a percentage.
+
+```{r}
+
+attach(stockdata)
+
+stockdata$ChangeNum<-as.numeric(stockdata$`Change %`)
+
+  
+windows.options(height=400, width=600)
+   
+ggplot(stockdata, aes(Date,ChangeNum))+geom_line()
+
+
+```
+
+
+ADF Test to check for the stationarity.
+```{r}
+adf.test(stockdata$Price)
+
+```
+
+ACF plot for the closing price.
+```{r}
+acf(stockdata$Price)
+
+```
+
+
+```{r}
+cor(stockdata$Price,stockdata$High)
+
+```
+
+Taking first order difference for the close price and high price.
+```{r warning=FALSE}
+#attach(stockzoo)
+
+retclose<-diff(log(stockdata$Price))
+rethigh<-diff(log(stockdata$High))
+
+```
+
+
+```{r}
+acf(rethigh)
+
+```
+
+ACF plot for 'retclose'
+```{r}
+acf(retclose)
+```
+
+partial ACF plot for retclose
+```{r}
+pacf(retclose)
+
+```
+
+
+Since there is still autocorrelation, we take second order difference of the values.
+
+```{r}
+ret2close<-diff(retclose)
+
+```
+
+```{r}
+adf.test(ret2close)
+
+```
+
+
+```{r}
+acf(ret2close)
+
+```
+
+```{r}
+pacf(ret2close)
+
+```
+
+```{r}
+cor(retclose, rethigh)
+```
+
+
+```{r}
+adf.test(retclose)
+```
+
+
+
+Importing the oil data for OPEC Basket.
+```{r}
+
+oildata<- read_excel("D:\\Master's Files\\Time Series\\SaudiArabia.xlsx", sheet = 'OPEC Basket')
+
+#oildata$Value<-as.numeric(oildata$Value)
+
+head(oildata)
+
+```
+
+
+Getting the dates with the lowest and highest closing prices.
+```{r}
+summary(oildata)
+
+paste(oildata$Date[oildata$Value==min(oildata$Value)])
+
+paste(oildata$Date[oildata$Value==max(oildata$Value)])
+
+```
+
+
+
+Converting the oil data to 'zoo' format.
+```{r}
+oilzoo<- read.zoo(data.frame(oildata), FUN = as.Date, format="%d%m%y")
+
+tail(oilzoo)
+
+summary(oilzoo)
+
+```
+
+
+Plotting for the Basket value as a time series plot.
+```{r}
+
+ggplot(oildata, aes(Date,Value))+geom_line()
+
+```
+
+ACF Test for the Oil Data value.
+```{r}
+acf(oildata$Value)
+
+```
+
+Taking the first order difference since the data does not show stationarity.
+```{r}
+retoil<-diff(log(oildata$Value))
+
+acf(retoil)
+
+```
+
+
+```{r}
+pacf(retoil)
+```
+
+Taking second order difference of the data
+```{r}
+ret2oil<-diff(retoil)
+
+pacf(ret2oil)
+
+```
+
+
+```{r}
+acf(ret2oil)
+
+```
+
+
+```{r}
+adf.test(ret2oil)
+
+```
+
+
+```{r}
+
+saudirawdata <- read_excel("D:\\Master's Files\\Time Series\\SaudiArabia.xlsx", sheet = 'Overall')
+
+tail(saudirawdata)
+```
+
+```{r}
+
+saudidata <- na.omit(saudirawdata)
+
+View(saudidata)
+
+```
+
+
+```{r}
+
+adf.test(oilzoo)
+
+```
+
+
+
+Taking the differences for oil, close and high for the consolidated data.
+```{r}
+
+head(oilzoo)
+
+retoil<-diff(log(saudidata$BasketValue))
+
+adf.test(retoil)
+
+```
+
+```{r}
+retclose <- diff(log(saudidata$StockPrice))
+
+rethigh <- diff(log(saudidata$High))
+
+
+
+
+adf.test(retclose)
+
+adf.test(rethigh)
+
+
+
+```
+
+
+```{r}
+
+library(lmtest)
+attach(oildata)
+
+cor(saudidata$StockPrice,saudidata$BasketValue)
+
+
+cor(saudidata$StockPrice,saudidata$High)
+```
+
+```{r}
+ret2oil<-diff(retoil)
+ret2close<-diff(retclose)
+
+```
+
+
+```{r}
+
+options(scipen=999)
+
+vardata <- ts(cbind(retoil, retclose))  
+
+
+head(vardata)
+
+```
+
+
+```{r}
+library(vars)
+
+lag_selectionX <- VARselect(vardata, lag.max = 10, type = "const")  # Choose maximum lags
+print(lag_selectionX)
+```
+
+
+
+
+```{r}
+var_modelX <- VAR( vardata, p = lag_selection2$selection[1], type = "const")
+summary(var_modelX)
+
+```
+
+
+```{r}
+irf(var_modelX, impulse = "retoil", response = "retclose")
+
+```
+
+
+```{r}
+varlatest<- head(vardata, 400)
+
+View(varlatest)
+
+varolder <- tail(vardata, 400)
+
+View(varolder)
+```
+
+
+
+
+
+
+```{r}
+lag_selection1<- VARselect(varlatest, lag.max = 10, type = "const")  # Choose maximum lags
+print(lag_selection1)
+```
+
+
+
+```{r}
+var_model1 <- VAR( varlatest, p = lag_selection1$selection[1], type = "const")
+var_model1
+#summary(var_model1)
+
+```
+
+
+```{r}
+lag_selection2 <- VARselect(varolder, lag.max = 10, type = "const")  # Choose maximum lags
+print(lag_selection2)
+```
+
+
+
+
+```{r}
+var_model2 <- VAR( varolder, p = lag_selection2$selection[1], type = "const")
+summary(var_model2)
+
+```
+
+
+
+```{r}
+irf(var_model1, impulse = "retoil", response = "retclose")
+
+```
+
+```{r}
+irf(var_model2, impulse = "retoil", response = "retclose")
+
+```
+
+Transfer Function Model for the whole data.
+
+Here, we are comparing the variable 'close' with the OPEC 'oil' price index.
+
+
+
+
+```{r}
+library(forecast)
+tf_model <- Arima(ret2close, xreg = ret2oil)
+summary(tf_model)
+
+```
+
+
+```{r}
+newret2oil  <-head(ret2oil,400)
+newret2close<-head(ret2close,400)
+
+tf_model_new <- Arima(newret2close, xreg = newret2oil)
+summary(tf_model_new)
+
+```
+
+
+```{r}
+oldret2oil  <-tail(ret2oil,400)
+oldret2close<-tail(ret2close,400)
+
+tf_model_old <- Arima(oldret2close, xreg = oldret2oil)
+summary(tf_model_old)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
